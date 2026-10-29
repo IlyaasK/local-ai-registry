@@ -20,6 +20,11 @@ class Speculation(unittest.TestCase):
         self.assertEqual(lab.speculation(launch),
                          ["--speculative-config", '{"method": "dspark", "num_speculative_tokens": 5}'])
 
+    def test_a_model_path_is_not_a_setting_and_a_spec_flag_keeps_its_name(self):
+        launch = {"command": ["llama-server", "-m", "/models/Qwen3.8-27B-mtp.gguf", "--spec-type", "draft-mtp",
+                              "--spec-draft-n-max=3", "--ctx-size", "131072"]}
+        self.assertEqual(lab.speculation(launch), ["--spec-type", "draft-mtp", "--spec-draft-n-max=3"])
+
 
 if __name__ == "__main__":
     unittest.main()

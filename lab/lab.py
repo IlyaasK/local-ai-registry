@@ -35,7 +35,7 @@ LAUNCHES = REG / "launches"  # launches frozen exactly as they were validated, o
 GATES = ["load", "chat", "reasoning", "tools", "context", "speed"]
 MIN_TPS = 15.0
 MAX_RECIPE_BYTES = 1024
-SPEC = re.compile(r"(speculative|dspark|spec[_-]?(algo|tokens)|draft|mtp)", re.I)
+SPEC = re.compile(r"(speculative|dspark|spec[_-]|draft|mtp)", re.I)  # matched against flag and env names, never values
 # The KV floor: a setup with more than KV_FLOOR_ABOVE_VRAM_GB of GPU memory (the card's vram_gb x cards x machines)
 # must hold at least KV_FLOOR_TOKENS (128k) of KV cache. `try` refuses a launch below it, `check` fails a new recipe
 # below it, and the plugin export leaves every recipe below it out. Recipes accepted before the floor are listed in
@@ -329,17 +329,13 @@ def stream_rate(endpoint, model, prompt, window=30.0):
 def speculation(launch):
     """The launch's speculative-decoding settings as it runs them, or None. Evidence only: a proof's tps is
     counted from client deltas, so it is true throughput whether or not any draft was accepted."""
-    args = [str(a) for a in launch.get("args") or []]
-    hits, consumed = [], False
+    args = [str(a) for part in ("args", "command") if isinstance(launch.get(part), list) for a in launch[part]]
+    hits = []
     for i, arg in enumerate(args):
-        if consumed:
-            consumed = False
-            continue
-        if SPEC.search(arg):
+        if arg.startswith("-") and SPEC.search(arg.split("=", 1)[0]):
             hits.append(arg)
             if "=" not in arg and i + 1 < len(args) and not args[i + 1].startswith("-"):
-                hits.append(args[i + 1])  # the flag's value: NEXTN, 5, or a speculative-config object
-                consumed = True
+                hits.append(args[i + 1])  # the flag's value: NEXTN, draft-mtp, 5, or a speculative-config object
     hits += [f"{k}={v}" for k, v in (launch.get("env") or {}).items() if SPEC.search(k)]
     return hits or None
 
