@@ -330,12 +330,16 @@ def speculation(launch):
     """The launch's speculative-decoding settings as it runs them, or None. Evidence only: a proof's tps is
     counted from client deltas, so it is true throughput whether or not any draft was accepted."""
     args = [str(a) for a in launch.get("args") or []]
-    hits = []
+    hits, consumed = [], False
     for i, arg in enumerate(args):
+        if consumed:
+            consumed = False
+            continue
         if SPEC.search(arg):
             hits.append(arg)
             if "=" not in arg and i + 1 < len(args) and not args[i + 1].startswith("-"):
                 hits.append(args[i + 1])  # the flag's value: NEXTN, 5, or a speculative-config object
+                consumed = True
     hits += [f"{k}={v}" for k, v in (launch.get("env") or {}).items() if SPEC.search(k)]
     return hits or None
 

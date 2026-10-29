@@ -15,6 +15,11 @@ class Speculation(unittest.TestCase):
     def test_null_args(self):
         self.assertIsNone(lab.speculation({"args": None}))
 
+    def test_a_config_value_is_not_counted_twice(self):
+        launch = {"args": ["--speculative-config", '{"method": "dspark", "num_speculative_tokens": 5}']}
+        self.assertEqual(lab.speculation(launch),
+                         ["--speculative-config", '{"method": "dspark", "num_speculative_tokens": 5}'])
+
 
 if __name__ == "__main__":
     unittest.main()
